@@ -120,7 +120,7 @@ function evolveValue(
 
 function updateDriver(
   driver: DriverState,
-  state: SimulationState,
+  // state: SimulationState,
   deltaMs: number,
 ): DriverState {
   const progressIncrease = randomBetween(0.008, 0.014);
@@ -134,13 +134,13 @@ function updateDriver(
     lapProgress -= 1;
   }
 
-  const speed = evolveValue(
-    driver.race.topSpeedKmh,
-    randomBetween(-0.5, 0.8),
-    2.5,
-    250,
-    330,
-  );
+  // const speed = evolveValue(
+  //   driver.race.topSpeedKmh,
+  //   randomBetween(-0.5, 0.8),
+  //   2.5,
+  //   250,
+  //   330,
+  // );
 
   const heartRate = evolveValue(
     driver.physiology.heartRateBpm,
@@ -430,7 +430,7 @@ export function stepSimulation(
   const drivers = Object.fromEntries(
     Object.values(state.drivers).map((driver) => [
       driver.id,
-      updateDriver(driver, state, deltaMs),
+      updateDriver(driver, deltaMs),
     ]),
   );
 
