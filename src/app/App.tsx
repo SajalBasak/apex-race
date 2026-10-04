@@ -6,6 +6,8 @@ import { Panel } from "@/components/panel/Panel";
 import { StatusBadge } from "@/components/status/StatusBadge";
 
 import { CarTelemetryPanel } from "@/features/car/CarTelemetryPanel";
+import { DriverTelemetryPanel } from "@/features/telemetry/components/DriverTelemetryPanel";
+import { TrackMap } from "@/features/race/components/TrackMap";
 
 import { useSimulationStore } from "@/state/simulation.store";
 import { useUIStore } from "@/state/ui.store";
@@ -68,7 +70,7 @@ function App() {
               </span>
             </div>
 
-            <h1 className="text-xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-2xl">
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
               Race Control
             </h1>
 
@@ -99,7 +101,7 @@ function App() {
                       "uppercase tracking-[0.12em]",
                       "transition-colors",
                       selected
-                        ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                        ? "border-[var(--accent)] bg-[var(--accent-soft)] text-slate-900"
                         : "border-[var(--border)] bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]",
                     ].join(" ")}
                   >
@@ -173,81 +175,11 @@ function App() {
 
         {/* MAIN TELEMETRY Car / Tyres + Driver physiology */}
         <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-
           {/* Interactive car + four tyres */}
           <CarTelemetryPanel />
 
           {/* Driver telemetry */}
-          <Panel
-            eyebrow="DRIVER TELEMETRY"
-            title={selectedDriver.shortName}
-          >
-            <div className="grid grid-cols-2 gap-3 p-4">
-
-              {/* Heart rate */}
-              <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] p-4">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                  Heart Rate
-                </div>
-
-                <div className="mt-2 font-mono text-2xl font-semibold tabular-nums text-[var(--text-primary)]">
-                  {selectedDriver.physiology.heartRateBpm}
-                  <span className="ml-1 text-xs text-[var(--text-muted)]">
-                    bpm
-                  </span>
-                </div>
-              </div>
-
-              {/* Breathing */}
-              <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] p-4">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                  Breathing
-                </div>
-
-                <div className="mt-2 font-mono text-2xl font-semibold tabular-nums text-[var(--text-primary)]">
-                  {selectedDriver.physiology.breathsPerMin.toFixed(
-                    1,
-                  )}
-                  <span className="ml-1 text-xs text-[var(--text-muted)]">
-                    /min
-                  </span>
-                </div>
-              </div>
-
-              {/* Stress */}
-              <div className="col-span-2 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] p-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                    Stress
-                  </div>
-
-                  <span className="font-mono text-sm tabular-nums text-[var(--text-primary)]">
-                    {selectedDriver.physiology.stress}%
-                  </span>
-                </div>
-
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--surface-3)]">
-                  <div
-                    className="h-full rounded-full bg-[var(--warning)] transition-[width] duration-700"
-                    style={{
-                      width: `${selectedDriver.physiology.stress}%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Current lap */}
-              <div className="col-span-2 mt-1 flex items-center justify-between border-t border-[var(--border)] pt-4">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                  Current Lap
-                </span>
-
-                <span className="font-mono text-lg font-semibold tabular-nums text-[var(--accent)]">
-                  {selectedDriver.race.currentLapTime}
-                </span>
-              </div>
-            </div>
-          </Panel>
+          <DriverTelemetryPanel />
         </div>
 
 
@@ -296,18 +228,9 @@ function App() {
             eyebrow="CIRCUIT"
             title={`${simulation.circuit.name} Track Map`}
           >
-            <div className="flex min-h-[280px] items-center justify-center p-6">
-              <div className="text-center">
-                <div className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                  Track map
-                </div>
-
-                <div className="mt-2 text-sm text-[var(--text-secondary)]">
-                  Interactive circuit visualization
-                  coming next
-                </div>
-              </div>
-            </div>
+            <TrackMap
+              drivers={Object.values(simulation.drivers)}
+            />
           </Panel>
 
           {/* Weather */}

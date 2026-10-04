@@ -1,6 +1,7 @@
 import type { DriverState } from "@/features/driver/driver.types";
 import type { RaceEvent } from "@/features/events/event.types";
 import type { SimulationState } from "./simulation.types";
+import type { TelemetryPoint } from "@/features/telemetry/telemetry.types";
 
 import {
   clamp,
@@ -9,6 +10,99 @@ import {
 } from "./simulation.utils";
 
 const TICK_MS = 1000;
+const MAX_TELEMETRY_POINTS = 60;
+const TARGET_LAP_SECONDS = 84;
+
+function advanceRaceProgress(
+  driver: DriverState,
+  deltaMs: number,
+): DriverState["race"] {
+  const race = driver.race;
+
+  if (
+    race.lap >=
+      race.totalLaps
+  ) {
+    return {
+      ...race,
+      lapProgress: 1,
+    };
+  }
+
+  const speedFactor =
+    clamp(
+      race.topSpeedKmh /
+        285,
+      0.96,
+      1.04,
+    );
+
+  const progressDelta =
+    (deltaMs /
+      1000 /
+      TARGET_LAP_SECONDS) *
+    speedFactor;
+
+  const rawProgress =
+    race.lapProgress +
+    progressDelta;
+
+  const completedLaps =
+    Math.floor(rawProgress);
+
+  const nextLap =
+    Math.min(
+      race.totalLaps,
+      race.lap +
+        completedLaps,
+    );
+
+  const finished =
+    nextLap >= race.totalLaps;
+
+  return {
+    ...race,
+
+    lap: nextLap,
+
+    lapProgress: finished
+      ? 1
+      : rawProgress % 1,
+  };
+}
+
+function updateTelemetryHistory(
+  state: SimulationState,
+): SimulationState["telemetryHistory"] {
+  const timestampMs = Date.now();
+
+  return Object.fromEntries(
+    Object.values(state.drivers).map((driver) => {
+      const point: TelemetryPoint = {
+        timestampMs,
+        elapsedMs: state.elapsedMs,
+
+        heartRateBpm:
+          driver.physiology.heartRateBpm,
+
+        breathsPerMin:
+          driver.physiology.breathsPerMin,
+
+        stress: driver.physiology.stress,
+      };
+
+      const previous =
+        state.telemetryHistory[driver.id] ?? [];
+
+      return [
+        driver.id,
+        [...previous, point].slice(
+          -MAX_TELEMETRY_POINTS,
+        ),
+      ];
+    }),
+  );
+}
 
 function evolveValue(
   current: number,
@@ -27,6 +121,7 @@ function evolveValue(
 function updateDriver(
   driver: DriverState,
   state: SimulationState,
+  deltaMs: number,
 ): DriverState {
   const progressIncrease = randomBetween(0.008, 0.014);
 
@@ -141,22 +236,16 @@ function updateDriver(
     },
   };
 
+  const nextRace =
+    advanceRaceProgress(
+      driver,
+      deltaMs,
+    );
+
   return {
     ...driver,
 
-    race: {
-      ...driver.race,
-
-      lap,
-      lapProgress,
-
-      topSpeedKmh: Math.round(speed),
-
-      currentLapTime:
-        lapProgress > 0.95
-          ? "1:24.02"
-          : driver.race.currentLapTime,
-    },
+    race: nextRace,
 
     physiology: {
       heartRateBpm: Math.round(heartRate),
@@ -341,11 +430,11 @@ export function stepSimulation(
   const drivers = Object.fromEntries(
     Object.values(state.drivers).map((driver) => [
       driver.id,
-      updateDriver(driver, state),
+      updateDriver(driver, state, deltaMs),
     ]),
   );
 
-  const nextState: SimulationState = {
+  const nextStateWithoutHistory: SimulationState = {
     ...state,
 
     elapsedMs: state.elapsedMs + deltaMs,
@@ -366,6 +455,15 @@ export function stepSimulation(
     ),
 
     weather: updateWeather(state.weather),
+  };
+
+  const nextState: SimulationState = {
+    ...nextStateWithoutHistory,
+
+    telemetryHistory:
+      updateTelemetryHistory(
+        nextStateWithoutHistory,
+      ),
   };
 
   const event = generateEvent(nextState);

@@ -6,6 +6,31 @@ import type { RaceEvent } from "@/features/events/event.types";
 import type { SimulationState } from "@/simulation/simulation.types";
 import type { WeatherState } from "@/features/weather/weather.types";
 
+import type { TelemetryPoint } from "@/features/telemetry/telemetry.types";
+
+function createInitialTelemetryHistory(
+  drivers: Record<string, DriverState>,
+): Record<string, TelemetryPoint[]> {
+  const now = Date.now();
+
+  return Object.fromEntries(
+    Object.values(drivers).map((driver) => [
+      driver.id,
+      [
+        {
+          timestampMs: now,
+          elapsedMs: 0,
+          heartRateBpm:
+            driver.physiology.heartRateBpm,
+          breathsPerMin:
+            driver.physiology.breathsPerMin,
+          stress: driver.physiology.stress,
+        },
+      ],
+    ]),
+  );
+}
+
 function createDriverState(
   driver: (typeof seed.drivers)[number],
 ): DriverState {
@@ -57,9 +82,6 @@ function createCarTelemetry(
     rpm: driver.baseline.rpm,
     engineTempC: driver.baseline.engineTempC,
     fuelPercent: driver.baseline.fuelPercent,
-
-    // ERS is not present in the seed data.
-    // We initialize a sensible runtime value.
     ersPercent: 76,
   };
 }
@@ -115,6 +137,9 @@ export function createInitialSimulation(): SimulationState {
     drivers,
 
     carTelemetry,
+
+    telemetryHistory:
+      createInitialTelemetryHistory(drivers),
 
     weather: createWeather(),
 

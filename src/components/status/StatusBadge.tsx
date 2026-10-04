@@ -29,7 +29,7 @@ export function StatusBadge({
       className={[
         "inline-flex items-center gap-1.5",
         "rounded-full px-2 py-1",
-        "text-[10px] font-bold uppercase tracking-[0.12em]",
+        "text-[10px] font-bold text-green-500 uppercase tracking-[0.12em]",
         statusClasses[status],
       ].join(" ")}
     >
